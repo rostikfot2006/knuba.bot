@@ -4,7 +4,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.exceptions import TelegramBadRequest
 
-TOKEN = "8833541762:AAGvMnJt5STRRFgYpQFpPaeDJEbNRg41SxQ"
+TOKEN = "8104227176:AAFYkxnMF1vXwfw_ZSS3d0Aj2cf6-sOw1JI"
 dp = Dispatcher()
 
 # ============================================================
@@ -115,6 +115,41 @@ KSM_24_SCHEDULE = """📅 Розклад для групи КСМ-24 (Жовте
 - 5 пара (15:20) — ФОКК [Лк] (Дистанційно, Азнаурян І.О.)
 """
 
+CAMPUS_MAP_TEXT = """🗺 <b>Навігація по корпусах КНУБА:</b>
+
+🏢 <b>Основні корпуси та позначення:</b>
+• <b>Лабораторний корпус</b> — всі аудиторії мають чотирицифрове значення[cite: 1].
+• <b>Військовий корпус (червоний «С»)</b> — всі аудиторії мають у назві літеру «С»[cite: 1].
+• <b>Геодезичний корпус (рожевий «3»)</b> — всі аудиторії мають у назві літеру «3»[cite: 1].
+• <b>Дизайнерський центр («Д»)</b> — всі аудиторії мають у назві літеру «Д»[cite: 1].
+• <b>Архітектурний корпус («А»)</b> — всі аудиторії мають у назві літеру «А»[cite: 1].
+
+📍 <b>Розподіл аудиторій по крилах:</b>
+🔹 <b>Ліве крило:</b>
+• І поверх: 103-124 ауд.[cite: 1]
+• II поверх: 203-224 ауд.[cite: 1]
+• III поверх: 301-320 ауд.[cite: 1]
+• IV поверх: 401-420 ауд.[cite: 1]
+
+🔹 <b>Праве крило:</b>
+• І поверх: 123-152 ауд.[cite: 1]
+• II поверх: 226-254 ауд. (та бібліотека)[cite: 1]
+• III поверх: 321-348 ауд. (та читальна зала)[cite: 1]
+• IV поверх: 422-440 ауд.[cite: 1]
+
+🔹 <b>Прибудова:</b>
+• І поверх: 154-194 ауд.[cite: 1]
+• II поверх: 251-292 ауд.[cite: 1]
+• III поверх: 345-376 ауд.[cite: 1]
+• IV поверх: 439-484 ауд.[cite: 1]
+
+🔹 <b>Архітектурний (А):</b>
+• І поверх: 102-110 ауд.[cite: 1]
+• -I поверх: 123-131 ауд.[cite: 1]
+• II поверх: Кафедри[cite: 1]
+• III поверх: 302-319 ауд. (та бібліотека)[cite: 1]
+"""
+
 # ============================================================
 # КЛАВІАТУРИ
 # ============================================================
@@ -154,8 +189,6 @@ def get_courses_kb(faculty, spec_code):
 
 def get_groups_kb(spec_code, faculty, course):
     all_groups = GROUPS.get(spec_code, [])
-
-    # Надійна фільтрація: якщо магістратура (5-6), шукаємо 'м', якщо бакалаврат — показуємо звичайні
     filtered_groups = []
     for grp in all_groups:
         if course in ["5", "6"]:
@@ -165,7 +198,6 @@ def get_groups_kb(spec_code, faculty, course):
             if "м" not in grp.lower():
                 filtered_groups.append(grp)
 
-    # Якщо фільтр нічого не залишив, показуємо всі доступні для спеціальності
     if not filtered_groups:
         filtered_groups = all_groups
 
@@ -193,6 +225,13 @@ def get_menu_kb(faculty, spec_code, course):
         [InlineKeyboardButton(text="📊 Розрахунковий комплекс", callback_data="menu_complex")],
         [InlineKeyboardButton(text="💬 Зворотний зв'язок", callback_data="menu_feedback")],
         [InlineKeyboardButton(text="🔙 Назад до груп", callback_data=f"course_{faculty}_{spec_code}_{course}")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_back_to_menu_kb(faculty, spec_code, course):
+    keyboard = [
+        [InlineKeyboardButton(text="⬅️ Назад до меню", callback_data=f"grp_{faculty}_{spec_code}_{course}_КСМ-24")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
@@ -275,12 +314,28 @@ async def group_callback(callback: CallbackQuery):
     await callback.answer()
 
 
+@dp.callback_query(F.data == "menu_map")
+async def menu_map_callback(callback: CallbackQuery):
+    try:
+        await callback.message.edit_text(
+            CAMPUS_MAP_TEXT,
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🔙 Назад до меню", callback_data="grp_ФАІТ_F7_3_КСМ-24")]
+            ]),
+            parse_mode="HTML"
+        )
+    except TelegramBadRequest:
+        pass
+    await callback.answer()
+
+
 @dp.callback_query(F.data.startswith("menu_"))
 async def menu_actions_callback(callback: CallbackQuery):
     action = callback.data.split("_")[1]
+    if action == "map":
+        return
     texts = {
         "free_rooms": "🟢 Функція пошуку вільних аудиторій у розробці.",
-        "map": "🗺 Тут буде інтерактивна карта корпусів КНУБА.",
         "program": "📚 Навчальну програму можна переглянути на офіційному сайті університету.",
         "settings": "⚙️ Налаштування сповіщень та формату розкладу.",
         "complex": "📊 Розрахунковий комплекс КНУБА.",
