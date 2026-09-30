@@ -1,11 +1,10 @@
 import asyncio
-import os
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.exceptions import TelegramBadRequest
 
-TOKEN = os.getenv("BOT_TOKEN")
+TOKEN = "8833541762:AAGvMnJt5STRRFgYpQFpPaeDJEbNRg41SxQ"
 dp = Dispatcher()
 
 # ============================================================
@@ -95,25 +94,25 @@ GROUPS = {
 KSM_24_SCHEDULE = """📅 Розклад для групи КСМ-24 (Жовтень 2026):
 
 🟢 Понеділок:
-• 2 пара (10:30) — ТестПрогСис [Лк] (Дистанційно, Шабала Є.Є.)
+- 2 пара (10:30) — ТестПрогСис [Лк] (Дистанційно, Шабала Є.Є.)
 
 🔵 Вівторок:
-• 1 пара (09:00) — ФОКК [Пз] (ауд. 476, Азнаурян І.О.)
-• 2 пара (10:30) — ТестПрогСис [Лб] (ауд. 472, Шабала Є.Є.)
+- 1 пара (09:00) — ФОКК [Пз] (ауд. 476, Азнаурян І.О.)
+- 2 пара (10:30) — ТестПрогСис [Лб] (ауд. 472, Шабала Є.Є.)
 
 🟠 Середа:
-• 1 пара (09:00) — СисАналіз [Пз] (ауд. 349, Ізмайлова О.В.)
-• 2 пара (10:30) — УП-S-UP [Пз] (ауд. 148, Концевий В.В.)
+- 1 пара (09:00) — СисАналіз [Пз] (ауд. 349, Ізмайлова О.В.)
+- 2 пара (10:30) — УП-S-UP [Пз] (ауд. 148, Концевий В.В.)
 
 🟣 Четвер:
-• 4 пара (13:50) — АвтСисДіагіКон [Пз] (ауд. 30А, Городжа А.Д.)
-• 5 пара (15:20) — ТестПрогСис [Лб] (ауд. 472, Шабала Є.Є.)
+- 4 пара (13:50) — АвтСисДіагіКон [Пз] (ауд. 30А, Городжа А.Д.)
+- 5 пара (15:20) — ТестПрогСис [Лб] (ауд. 472, Шабала Є.Є.)
 
 🟡 П'ятниця:
-• 2 пара (10:30) — ДослідОперацій [Лк/Лб] (Дистанційно, Терентьєв О.О.)
-• 3 пара (12:20) — СисАналіз [Лк] (Дистанційно, Ізмайлова О.В.)
-• 4 пара (13:50) — Політ [Лк] (Дистанційно, Семко В.Л.)
-• 5 пара (15:20) — ФОКК [Лк] (Дистанційно, Азнаурян І.О.)
+- 2 пара (10:30) — ДослідОперацій [Лк/Лб] (Дистанційно, Терентьєв О.О.)
+- 3 пара (12:20) — СисАналіз [Лк] (Дистанційно, Ізмайлова О.В.)
+- 4 пара (13:50) — Політ [Лк] (Дистанційно, Семко В.Л.)
+- 5 пара (15:20) — ФОКК [Лк] (Дистанційно, Азнаурян І.О.)
 """
 
 # ============================================================
@@ -121,12 +120,16 @@ KSM_24_SCHEDULE = """📅 Розклад для групи КСМ-24 (Жовте
 # ============================================================
 def get_faculties_kb():
     keyboard = [
-        [InlineKeyboardButton(text="ФАІТ", callback_data="fac_ФАІТ"), InlineKeyboardButton(text="ФУПП", callback_data="fac_ФУПП")],
-        [InlineKeyboardButton(text="АРХ", callback_data="fac_АРХ"), InlineKeyboardButton(text="БФ", callback_data="fac_БФ")],
-        [InlineKeyboardButton(text="БТФ", callback_data="fac_БТФ"), InlineKeyboardButton(text="ГІСУТ", callback_data="fac_ГІСУТ")],
+        [InlineKeyboardButton(text="ФАІТ", callback_data="fac_ФАІТ"),
+         InlineKeyboardButton(text="ФУПП", callback_data="fac_ФУПП")],
+        [InlineKeyboardButton(text="АРХ", callback_data="fac_АРХ"),
+         InlineKeyboardButton(text="БФ", callback_data="fac_БФ")],
+        [InlineKeyboardButton(text="БТФ", callback_data="fac_БТФ"),
+         InlineKeyboardButton(text="ГІСУТ", callback_data="fac_ГІСУТ")],
         [InlineKeyboardButton(text="ФІСЕ", callback_data="fac_ФІСЕ")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
 
 def get_specialties_kb(faculty):
     keyboard = []
@@ -135,31 +138,64 @@ def get_specialties_kb(faculty):
     keyboard.append([InlineKeyboardButton(text="⬅️ Назад до факультетів", callback_data="back_fac")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-def get_groups_kb(spec_code, faculty):
-    groups = GROUPS.get(spec_code, ["Групи відсутні"])
+
+def get_courses_kb(faculty, spec_code):
+    keyboard = [
+        [InlineKeyboardButton(text="1 курс", callback_data=f"course_{faculty}_{spec_code}_1"),
+         InlineKeyboardButton(text="2 курс", callback_data=f"course_{faculty}_{spec_code}_2")],
+        [InlineKeyboardButton(text="3 курс", callback_data=f"course_{faculty}_{spec_code}_3"),
+         InlineKeyboardButton(text="4 курс", callback_data=f"course_{faculty}_{spec_code}_4")],
+        [InlineKeyboardButton(text="5 курс (Магістратура)", callback_data=f"course_{faculty}_{spec_code}_5"),
+         InlineKeyboardButton(text="6 курс (Магістратура)", callback_data=f"course_{faculty}_{spec_code}_6")],
+        [InlineKeyboardButton(text="⬅️ Назад до спеціальностей", callback_data=f"back_spec_{faculty}")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_groups_kb(spec_code, faculty, course):
+    all_groups = GROUPS.get(spec_code, [])
+
+    # Надійна фільтрація: якщо магістратура (5-6), шукаємо 'м', якщо бакалаврат — показуємо звичайні
+    filtered_groups = []
+    for grp in all_groups:
+        if course in ["5", "6"]:
+            if "м" in grp.lower():
+                filtered_groups.append(grp)
+        else:
+            if "м" not in grp.lower():
+                filtered_groups.append(grp)
+
+    # Якщо фільтр нічого не залишив, показуємо всі доступні для спеціальності
+    if not filtered_groups:
+        filtered_groups = all_groups
+
     keyboard = []
     row = []
-    for grp in groups:
-        row.append(InlineKeyboardButton(text=grp, callback_data=f"grp_{faculty}_{spec_code}_{grp}"))
+    for grp in filtered_groups:
+        row.append(InlineKeyboardButton(text=grp, callback_data=f"grp_{faculty}_{spec_code}_{course}_{grp}"))
         if len(row) == 3:
             keyboard.append(row)
             row = []
     if row:
         keyboard.append(row)
-    
-    keyboard.append([InlineKeyboardButton(text="⬅️ Назад до спеціальностей", callback_data=f"back_spec_{faculty}")])
+
+    keyboard.append([InlineKeyboardButton(text="⬅️ Назад до курсів", callback_data=f"spec_{faculty}_{spec_code}")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-def get_menu_kb(faculty, spec_code):
+
+def get_menu_kb(faculty, spec_code, course):
     keyboard = [
-        [InlineKeyboardButton(text="🔄 Глянути інший розклад", callback_data=f"spec_{faculty}_{spec_code}")],
-        [InlineKeyboardButton(text="🟢 Вільні аудиторії", callback_data="menu_free_rooms"), InlineKeyboardButton(text="🗺 Карта корпусів", callback_data="menu_map")],
-        [InlineKeyboardButton(text="📚 Навчальна програма", callback_data="menu_program"), InlineKeyboardButton(text="⚙️ Налаштування", callback_data="menu_settings")],
+        [InlineKeyboardButton(text="🔄 Глянути інший розклад", callback_data=f"course_{faculty}_{spec_code}_{course}")],
+        [InlineKeyboardButton(text="🟢 Вільні аудиторії", callback_data="menu_free_rooms"),
+         InlineKeyboardButton(text="🗺 Карта корпусів", callback_data="menu_map")],
+        [InlineKeyboardButton(text="📚 Навчальна програма", callback_data="menu_program"),
+         InlineKeyboardButton(text="⚙ Налаштування", callback_data="menu_settings")],
         [InlineKeyboardButton(text="📊 Розрахунковий комплекс", callback_data="menu_complex")],
         [InlineKeyboardButton(text="💬 Зворотний зв'язок", callback_data="menu_feedback")],
-        [InlineKeyboardButton(text="🔙 Назад", callback_data=f"spec_{faculty}_{spec_code}")]
+        [InlineKeyboardButton(text="🔙 Назад до груп", callback_data=f"course_{faculty}_{spec_code}_{course}")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
 
 # ============================================================
 # ОБРОБНИКИ
@@ -171,18 +207,20 @@ async def start_cmd(message: Message):
         reply_markup=get_faculties_kb()
     )
 
+
 @dp.callback_query(F.data.startswith("fac_"))
 async def faculty_callback(callback: CallbackQuery):
     faculty = callback.data.split("_")[1]
     try:
         await callback.message.edit_text(
-            f"🏛 Факультет: **{faculty}**\n\nКрок 2. Оберіть спеціальність:",
+            f"🏛 Факультет: <b>{faculty}</b>\n\nКрок 2. Оберіть спеціальність:",
             reply_markup=get_specialties_kb(faculty),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
     except TelegramBadRequest:
         pass
     await callback.answer()
+
 
 @dp.callback_query(F.data.startswith("spec_"))
 async def specialty_callback(callback: CallbackQuery):
@@ -190,34 +228,52 @@ async def specialty_callback(callback: CallbackQuery):
     spec_name = FACULTIES[faculty][code]
     try:
         await callback.message.edit_text(
-            f"🏛 Факультет: {faculty}\n🎓 Спеціальність: **{code} — {spec_name}**\n\nКрок 3. Оберіть групу:",
-            reply_markup=get_groups_kb(code, faculty),
-            parse_mode="Markdown"
+            f"🏛 Факультет: {faculty}\n🎓 Спеціальність: <b>{code} — {spec_name}</b>\n\nКрок 3. Оберіть курс навчання:",
+            reply_markup=get_courses_kb(faculty, code),
+            parse_mode="HTML"
         )
     except TelegramBadRequest:
         pass
     await callback.answer()
+
+
+@dp.callback_query(F.data.startswith("course_"))
+async def course_callback(callback: CallbackQuery):
+    _, faculty, code, course = callback.data.split("_", 3)
+    try:
+        await callback.message.edit_text(
+            f"🏛 Факультет: {faculty}\n🎓 Спеціальність: {code}\n📚 Курс: <b>{course} курс</b>\n\nКрок 4. Оберіть групу:",
+            reply_markup=get_groups_kb(code, faculty, course),
+            parse_mode="HTML"
+        )
+    except TelegramBadRequest:
+        pass
+    await callback.answer()
+
 
 @dp.callback_query(F.data.startswith("grp_"))
 async def group_callback(callback: CallbackQuery):
     parts = callback.data.split("_")
     faculty = parts[1]
     spec_code = parts[2]
-    group = parts[3]
-    
+    course = parts[3]
+    group = parts[4]
+
     if group == "КСМ-24":
-        text = f"✅ Ви успішно обрали: 👥 Група: {group}\n\n{KSM_24_SCHEDULE}"
+        text = f"✅ Ви успішно обрали: 👥 Група: <b>{group}</b>\n\n{KSM_24_SCHEDULE}"
     else:
-        text = f"✅ Ви успішно обрали: 👥 Група: {group}\n\n📅 Розклад для цієї групи буде підвантажено найближчим часом!"
-    
+        text = f"✅ Ви успішно обрали: 👥 Група: <b>{group}</b>\n\n📅 Розклад для цієї групи буде підвантажено найближчим часом!"
+
     try:
         await callback.message.edit_text(
             text,
-            reply_markup=get_menu_kb(faculty, spec_code)
+            reply_markup=get_menu_kb(faculty, spec_code, course),
+            parse_mode="HTML"
         )
     except TelegramBadRequest as e:
         print(f"Помилка редагування: {e}")
     await callback.answer()
+
 
 @dp.callback_query(F.data.startswith("menu_"))
 async def menu_actions_callback(callback: CallbackQuery):
@@ -232,6 +288,7 @@ async def menu_actions_callback(callback: CallbackQuery):
     }
     await callback.answer(texts.get(action, "Розділ у розробці"), show_alert=True)
 
+
 @dp.callback_query(F.data == "back_fac")
 async def back_to_faculties(callback: CallbackQuery):
     try:
@@ -243,18 +300,20 @@ async def back_to_faculties(callback: CallbackQuery):
         pass
     await callback.answer()
 
+
 @dp.callback_query(F.data.startswith("back_spec_"))
 async def back_to_specialties(callback: CallbackQuery):
     faculty = callback.data.split("_")[2]
     try:
         await callback.message.edit_text(
-            f"🏛 Факультет: **{faculty}**\n\nКрок 2. Оберіть спеціальність:",
+            f"🏛 Факультет: <b>{faculty}</b>\n\nКрок 2. Оберіть спеціальність:",
             reply_markup=get_specialties_kb(faculty),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
     except TelegramBadRequest:
         pass
     await callback.answer()
+
 
 # ============================================================
 # ЗАПУСК
@@ -263,6 +322,7 @@ async def main():
     bot = Bot(token=TOKEN)
     print("Бот успішно запущено!")
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
