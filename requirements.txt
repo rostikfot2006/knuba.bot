@@ -1,2 +1,2 @@
-aiogram==3.17.0
-pydantic==2.6.4
+aiogram==3.13.0
+pydantic==2.9.0
