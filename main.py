@@ -463,11 +463,19 @@ async def start_cmd(message: Message):
 async def faculty_callback(callback: CallbackQuery):
     faculty = callback.data.split("_")[1]
     try:
-        await callback.message.edit_text(
-            f"🏛 Факультет: <b>{faculty}</b>\n\nКрок 2. Оберіть спеціальність:",
-            reply_markup=get_specialties_kb(faculty),
-            parse_mode="HTML",
-        )
+        if callback.message.photo:
+            await callback.message.delete()
+            await callback.message.answer(
+                f"🏛 Факультет: <b>{faculty}</b>\n\nКрок 2. Оберіть спеціальність:",
+                reply_markup=get_specialties_kb(faculty),
+                parse_mode="HTML",
+            )
+        else:
+            await callback.message.edit_text(
+                f"🏛 Факультет: <b>{faculty}</b>\n\nКрок 2. Оберіть спеціальність:",
+                reply_markup=get_specialties_kb(faculty),
+                parse_mode="HTML",
+            )
     except TelegramBadRequest:
         pass
     await callback.answer()
@@ -478,11 +486,19 @@ async def specialty_callback(callback: CallbackQuery):
     _, faculty, code = callback.data.split("_", 2)
     spec_name = FACULTIES[faculty][code]
     try:
-        await callback.message.edit_text(
-            f"🏛 Факультет: {faculty}\n🎓 Спеціальність: <b>{code} — {spec_name}</b>\n\nКрок 3. Оберіть курс навчання:",
-            reply_markup=get_courses_kb(faculty, code),
-            parse_mode="HTML",
-        )
+        if callback.message.photo:
+            await callback.message.delete()
+            await callback.message.answer(
+                f"🏛 Факультет: {faculty}\n🎓 Спеціальність: <b>{code} — {spec_name}</b>\n\nКрок 3. Оберіть курс навчання:",
+                reply_markup=get_courses_kb(faculty, code),
+                parse_mode="HTML",
+            )
+        else:
+            await callback.message.edit_text(
+                f"🏛 Факультет: {faculty}\n🎓 Спеціальність: <b>{code} — {spec_name}</b>\n\nКрок 3. Оберіть курс навчання:",
+                reply_markup=get_courses_kb(faculty, code),
+                parse_mode="HTML",
+            )
     except TelegramBadRequest:
         pass
     await callback.answer()
@@ -492,11 +508,19 @@ async def specialty_callback(callback: CallbackQuery):
 async def course_callback(callback: CallbackQuery):
     _, faculty, code, course = callback.data.split("_", 3)
     try:
-        await callback.message.edit_text(
-            f"🏛 Факультет: {faculty}\n🎓 Спеціальність: {code}\n📚 Курс: <b>{course} курс</b>\n\nКрок 4. Оберіть групу:",
-            reply_markup=get_groups_kb(code, faculty, course),
-            parse_mode="HTML",
-        )
+        if callback.message.photo:
+            await callback.message.delete()
+            await callback.message.answer(
+                f"🏛 Факультет: {faculty}\n🎓 Спеціальність: {code}\n📚 Курс: <b>{course} курс</b>\n\nКрок 4. Оберіть групу:",
+                reply_markup=get_groups_kb(code, faculty, course),
+                parse_mode="HTML",
+            )
+        else:
+            await callback.message.edit_text(
+                f"🏛 Факультет: {faculty}\n🎓 Спеціальність: {code}\n📚 Курс: <b>{course} курс</b>\n\nКрок 4. Оберіть групу:",
+                reply_markup=get_groups_kb(code, faculty, course),
+                parse_mode="HTML",
+            )
     except TelegramBadRequest:
         pass
     await callback.answer()
@@ -549,9 +573,7 @@ async def menu_map_callback(callback: CallbackQuery):
         ]
     )
 
-    # Виправлено назву файлу на актуальну
     exact_filename = "map.jpg"
-
     script_dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(script_dir, exact_filename)
 
@@ -588,10 +610,7 @@ async def menu_actions_callback(callback: CallbackQuery):
         return
     texts = {
         "free_rooms": "🟢 Функція пошуку вільних аудиторій у розробці.",
-        "program": (
-            "📚 Навчальну програму можна переглянути на офіційному сайті"
-            " університету."
-        ),
+        "program": "📚 Навчальну програму можна переглянути на офіційному сайті університету.",
         "settings": "⚙ Налаштування сповіщень та формату розкладу.",
         "complex": "📊 Розрахунковий комплекс КНУБА.",
         "feedback": "💬 Для зв'язку з адміністратором пишіть у підтримку.",
