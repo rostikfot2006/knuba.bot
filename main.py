@@ -1,7 +1,7 @@
 import asyncio
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, FSInputFile
 from aiogram.exceptions import TelegramBadRequest
 
 TOKEN = "8104227176:AAFYkxnMF1vXwfw_ZSS3d0Aj2cf6-sOw1JI"
@@ -115,39 +115,59 @@ KSM_24_SCHEDULE = """📅 Розклад для групи КСМ-24 (Жовте
 - 5 пара (15:20) — ФОКК [Лк] (Дистанційно, Азнаурян І.О.)
 """
 
-CAMPUS_MAP_TEXT = """🗺 <b>Навігація по корпусах КНУБА:</b>
+KSM_25_SCHEDULE = """📅 Розклад для групи КСМ-25 (Жовтень 2026):
 
-🏢 <b>Основні корпуси та позначення:</b>
-• <b>Лабораторний корпус</b> — всі аудиторії мають чотирицифрове значення[cite: 1].
-• <b>Військовий корпус (червоний «С»)</b> — всі аудиторії мають у назві літеру «С»[cite: 1].
-• <b>Геодезичний корпус (рожевий «3»)</b> — всі аудиторії мають у назві літеру «3»[cite: 1].
-• <b>Дизайнерський центр («Д»)</b> — всі аудиторії мають у назві літеру «Д»[cite: 1].
-• <b>Архітектурний корпус («А»)</b> — всі аудиторії мають у назві літеру «А»[cite: 1].
+🟢 Понеділок:
+- 1 пара (09:00) — Вища математика [Лк] (Дистанційно)
+- 2 пара (10:30) — Програмування (C++) [Пз] (ауд. 472)
 
-📍 <b>Розподіл аудиторій по крилах:</b>
-🔹 <b>Ліве крило:</b>
-• І поверх: 103-124 ауд.[cite: 1]
-• II поверх: 203-224 ауд.[cite: 1]
-• III поверх: 301-320 ауд.[cite: 1]
-• IV поверх: 401-420 ауд.[cite: 1]
+🔵 Вівторок:
+- 2 пара (10:30) — Архітектура комп'ютерів [Лк] (Дистанційно)
+- 3 пара (12:20) — Архітектура комп'ютерів [Лб] (ауд. 476)
 
-🔹 <b>Праве крило:</b>
-• І поверх: 123-152 ауд.[cite: 1]
-• II поверх: 226-254 ауд. (та бібліотека)[cite: 1]
-• III поверх: 321-348 ауд. (та читальна зала)[cite: 1]
-• IV поверх: 422-440 ауд.[cite: 1]
+🟠 Середа:
+- 1 пара (09:00) — Дискретна математика [Лк] (Дистанційно)
+- 2 пара (10:30) — Дискретна математика [Пз] (ауд. 349)
 
-🔹 <b>Прибудова:</b>
-• І поверх: 154-194 ауд.[cite: 1]
-• II поверх: 251-292 ауд.[cite: 1]
-• III поверх: 345-376 ауд.[cite: 1]
-• IV поверх: 439-484 ауд.[cite: 1]
+🟣 Четвер:
+- 3 пара (12:20) — Історія та культура України [Лк] (Дистанційно)
+- 4 пара (13:50) — Іноземна мова [Пз] (ауд. 148)
 
-🔹 <b>Архітектурний (А):</b>
-• І поверх: 102-110 ауд.[cite: 1]
-• -I поверх: 123-131 ауд.[cite: 1]
-• II поверх: Кафедри[cite: 1]
-• III поверх: 302-319 ауд. (та бібліотека)[cite: 1]
+🟡 П'ятниця:
+- 2 пара (10:30) — Фізичне виховання [Пз] (Спортивний зал)
+"""
+
+CAMPUS_MAP_CAPTION = """🗺 <b>Навігація по корпусах КНУБА:</b>
+
+Лабораторний корпус - всі ауд. що мають чотирьохцифрове значення.
+Військовий корпус він же (червоний) - всі ауд. що мають в назві «С».
+Геодезичний корпус він же (рожевий) - всі ауд. що мають у назві «З».
+Дизайнерський центр («Д») - всі ауд. що мають в назві «Д».
+Архітектурний корпус - всі ауд. що мають у назві «А».
+
+<b>Ліве крило:</b>
+І поверх - 103-124 ауд.
+II поверх - 203-224 ауд.
+III поверх - 301-320 ауд.
+IV поверх - 401-420 ауд.
+
+<b>Праве крило:</b>
+І поверх - 123-152 ауд.
+II поверх - 226-254 ауд.; бібліотека.
+III поверх - 321-348 ауд.; читальна зала.
+IV поверх - 422-440 ауд.
+
+<b>Прибудова:</b>
+І поверх - 154-194 ауд.
+II поверх - 251-292 ауд.
+III поверх - 345-376 ауд.
+IV поверх - 439-484 ауд.
+
+<b>Архітектурний (А):</b>
+І поверх - 102-110 ауд.
+-I поверх - 123-131 ауд.
+II поверх - кафедри.
+III поверх - 302-319 ауд.; бібліотека.
 """
 
 # ============================================================
@@ -211,7 +231,7 @@ def get_groups_kb(spec_code, faculty, course):
     if row:
         keyboard.append(row)
 
-    keyboard.append([InlineKeyboardButton(text="⬅️ Назад до курсів", callback_data=f"spec_{faculty}_{spec_code}")])
+    keyboard.append([InlineKeyboardButton(text="⬅ Назад до курсів", callback_data=f"spec_{faculty}_{spec_code}")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
@@ -225,13 +245,6 @@ def get_menu_kb(faculty, spec_code, course):
         [InlineKeyboardButton(text="📊 Розрахунковий комплекс", callback_data="menu_complex")],
         [InlineKeyboardButton(text="💬 Зворотний зв'язок", callback_data="menu_feedback")],
         [InlineKeyboardButton(text="🔙 Назад до груп", callback_data=f"course_{faculty}_{spec_code}_{course}")]
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-
-def get_back_to_menu_kb(faculty, spec_code, course):
-    keyboard = [
-        [InlineKeyboardButton(text="⬅️ Назад до меню", callback_data=f"grp_{faculty}_{spec_code}_{course}_КСМ-24")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
@@ -300,32 +313,53 @@ async def group_callback(callback: CallbackQuery):
 
     if group == "КСМ-24":
         text = f"✅ Ви успішно обрали: 👥 Група: <b>{group}</b>\n\n{KSM_24_SCHEDULE}"
+    elif group == "КСМ-25":
+        text = f"✅ Ви успішно обрали: 👥 Група: <b>{group}</b>\n\n{KSM_25_SCHEDULE}"
     else:
         text = f"✅ Ви успішно обрали: 👥 Група: <b>{group}</b>\n\n📅 Розклад для цієї групи буде підвантажено найближчим часом!"
 
-    try:
-        await callback.message.edit_text(
+    if callback.message.photo:
+        await callback.message.delete()
+        await callback.message.answer(
             text,
             reply_markup=get_menu_kb(faculty, spec_code, course),
             parse_mode="HTML"
         )
-    except TelegramBadRequest as e:
-        print(f"Помилка редагування: {e}")
+    else:
+        try:
+            await callback.message.edit_text(
+                text,
+                reply_markup=get_menu_kb(faculty, spec_code, course),
+                parse_mode="HTML"
+            )
+        except TelegramBadRequest as e:
+            print(f"Помилка редагування: {e}")
     await callback.answer()
 
 
 @dp.callback_query(F.data == "menu_map")
 async def menu_map_callback(callback: CallbackQuery):
+    back_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔙 Назад до меню", callback_data="grp_ФАІТ_F7_3_КСМ-24")]
+    ])
+    
+    photo_file = FSInputFile("photo_2026-09-30_21-24-41_2.jpg")
+    
     try:
-        await callback.message.edit_text(
-            CAMPUS_MAP_TEXT,
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🔙 Назад до меню", callback_data="grp_ФАІТ_F7_3_КСМ-24")]
-            ]),
+        await callback.message.delete()
+        await callback.message.answer_photo(
+            photo=photo_file,
+            caption=CAMPUS_MAP_CAPTION,
+            reply_markup=back_kb,
             parse_mode="HTML"
         )
-    except TelegramBadRequest:
-        pass
+    except Exception as e:
+        print(f"Помилка надсилання фото карти: {e}")
+        await callback.message.answer(
+            CAMPUS_MAP_CAPTION,
+            reply_markup=back_kb,
+            parse_mode="HTML"
+        )
     await callback.answer()
 
 
@@ -337,7 +371,7 @@ async def menu_actions_callback(callback: CallbackQuery):
     texts = {
         "free_rooms": "🟢 Функція пошуку вільних аудиторій у розробці.",
         "program": "📚 Навчальну програму можна переглянути на офіційному сайті університету.",
-        "settings": "⚙️ Налаштування сповіщень та формату розкладу.",
+        "settings": "⚙ Налаштування сповіщень та формату розкладу.",
         "complex": "📊 Розрахунковий комплекс КНУБА.",
         "feedback": "💬 Для зв'язку з адміністратором пишіть у підтримку."
     }
@@ -346,27 +380,42 @@ async def menu_actions_callback(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "back_fac")
 async def back_to_faculties(callback: CallbackQuery):
-    try:
-        await callback.message.edit_text(
+    if callback.message.photo:
+        await callback.message.delete()
+        await callback.message.answer(
             "Вітаю в боті розкладу КНУБА!\n\nКрок 1. Оберіть факультет:",
             reply_markup=get_faculties_kb()
         )
-    except TelegramBadRequest:
-        pass
+    else:
+        try:
+            await callback.message.edit_text(
+                "Вітаю в боті розкладу КНУБА!\n\nКрок 1. Оберіть факультет:",
+                reply_markup=get_faculties_kb()
+            )
+        except TelegramBadRequest:
+            pass
     await callback.answer()
 
 
 @dp.callback_query(F.data.startswith("back_spec_"))
 async def back_to_specialties(callback: CallbackQuery):
     faculty = callback.data.split("_")[2]
-    try:
-        await callback.message.edit_text(
+    if callback.message.photo:
+        await callback.message.delete()
+        await callback.message.answer(
             f"🏛 Факультет: <b>{faculty}</b>\n\nКрок 2. Оберіть спеціальність:",
             reply_markup=get_specialties_kb(faculty),
             parse_mode="HTML"
         )
-    except TelegramBadRequest:
-        pass
+    else:
+        try:
+            await callback.message.edit_text(
+                f"🏛 Факультет: <b>{faculty}</b>\n\nКрок 2. Оберіть спеціальність:",
+                reply_markup=get_specialties_kb(faculty),
+                parse_mode="HTML"
+            )
+        except TelegramBadRequest:
+            pass
     await callback.answer()
 
 
