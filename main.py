@@ -549,10 +549,9 @@ async def menu_map_callback(callback: CallbackQuery):
         ]
     )
 
-    # ТОЧНА НАЗВА ВАШОГО ФАЙЛУ ЗІ СКРІНШОТА
-    exact_filename = "photo_2026_09_30_21_24_41.jpg"
+    # Виправлено назву файлу на актуальну
+    exact_filename = "map.jpg"
 
-    # Перевіряємо шлях у папці зі скриптом
     script_dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(script_dir, exact_filename)
 
