@@ -1,10 +1,11 @@
 import asyncio
+import os
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, FSInputFile
 from aiogram.exceptions import TelegramBadRequest
 
-TOKEN = "8104227176:AAFYkxnMF1vXwfw_ZSS3d0Aj2cf6-sOw1JI"
+TOKEN = "8104227176:AAF2J_B7CrAGnzvtFvFcJ6wAQTjbJJDBDcE"
 dp = Dispatcher()
 
 # ============================================================
@@ -118,23 +119,31 @@ KSM_24_SCHEDULE = """📅 Розклад для групи КСМ-24 (Жовте
 KSM_25_SCHEDULE = """📅 Розклад для групи КСМ-25 (Жовтень 2026):
 
 🟢 Понеділок:
-- 1 пара (09:00) — Вища математика [Лк] (Дистанційно)
-- 2 пара (10:30) — Програмування (C++) [Пз] (ауд. 472)
+- 1 пара (09:00) — ПтаРОбчисл [Лк] (Дистанційно, Маленко М.В.)
+- 2 пара (10:30) — ІФтаФД [Лк] (Дистанційно, Лакуша Н.М.)
+- 3 пара (12:20) — ЕІТ [Лк] (Дистанційно, Терентьєв О.О.)
+- 4 пара (13:50) — ОбОрПрог [Лк] (Дистанційно, Гончаренко Т.А.)
+- 5 пара (15:20) — ЦифрОбСигн [Лк] (Дистанційно, Котенко А.М.)
 
 🔵 Вівторок:
-- 2 пара (10:30) — Архітектура комп'ютерів [Лк] (Дистанційно)
-- 3 пара (12:20) — Архітектура комп'ютерів [Лб] (ауд. 476)
+- 1 пара (09:00) — ОБД [Лб] (ауд. 349, Бардін Я.О.)
+- 2 пара (10:30) — ЕІТ [Пз] (ауд. 146, Терентьєв О.О.)
+- 3 пара (12:20) — ЦифрОбСигн [Пз] (ауд. каф., Котенко А.М.)
 
 🟠 Середа:
-- 1 пара (09:00) — Дискретна математика [Лк] (Дистанційно)
-- 2 пара (10:30) — Дискретна математика [Пз] (ауд. 349)
+- 3 пара (12:20) — ФізВих [Пз] / ІПЗ [Лб] (ауд. спорт / ауд. 504, Головко О.О. / Маринський К.В.)
+- 4 пара (13:50) — ДискретМат [Пз] (ауд. 368/457, Серпінська О.І.)
 
 🟣 Четвер:
-- 3 пара (12:20) — Історія та культура України [Лк] (Дистанційно)
-- 4 пара (13:50) — Іноземна мова [Пз] (ауд. 148)
+- 1 пара (09:00) — ОснАкадПисЦит [Пз] (ауд. 448, Маковій М.Г.)
+- 2 пара (10:30) — ОбОрПрог [Лб] (ауд. 604, Долгополов С.Ю.)
+- 3 пара (12:20) — ПтаРОбчисл [Пз] (ауд. каф., Маленко М.В.)
+- 4 пара (13:50) — ФізВих [Пз] (ауд. спорт, Головко О.О.)
 
 🟡 П'ятниця:
-- 2 пара (10:30) — Фізичне виховання [Пз] (Спортивний зал)
+- 1 пара (09:00) — ДискретМат [Лк] (Дистанційно, Серпінська О.І.)
+- 2 пара (10:30) — ОБД [Лк] (Дистанційно, Бардін Я.О.)
+- 3 пара (12:20) — ІПЗ [Лк] (Дистанційно, Гуменний Д.О.)
 """
 
 CAMPUS_MAP_CAPTION = """🗺 <b>Навігація по корпусах КНУБА:</b>
@@ -185,14 +194,12 @@ def get_faculties_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-
 def get_specialties_kb(faculty):
     keyboard = []
     for code, name in FACULTIES[faculty].items():
         keyboard.append([InlineKeyboardButton(text=f"{code} — {name}", callback_data=f"spec_{faculty}_{code}")])
     keyboard.append([InlineKeyboardButton(text="⬅️ Назад до факультетів", callback_data="back_fac")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
 
 def get_courses_kb(faculty, spec_code):
     keyboard = [
@@ -205,7 +212,6 @@ def get_courses_kb(faculty, spec_code):
         [InlineKeyboardButton(text="⬅️ Назад до спеціальностей", callback_data=f"back_spec_{faculty}")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
 
 def get_groups_kb(spec_code, faculty, course):
     all_groups = GROUPS.get(spec_code, [])
@@ -234,7 +240,6 @@ def get_groups_kb(spec_code, faculty, course):
     keyboard.append([InlineKeyboardButton(text="⬅ Назад до курсів", callback_data=f"spec_{faculty}_{spec_code}")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-
 def get_menu_kb(faculty, spec_code, course):
     keyboard = [
         [InlineKeyboardButton(text="🔄 Глянути інший розклад", callback_data=f"course_{faculty}_{spec_code}_{course}")],
@@ -248,7 +253,6 @@ def get_menu_kb(faculty, spec_code, course):
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-
 # ============================================================
 # ОБРОБНИКИ
 # ============================================================
@@ -258,7 +262,6 @@ async def start_cmd(message: Message):
         "Вітаю в боті розкладу КНУБА!\n\nКрок 1. Оберіть факультет:",
         reply_markup=get_faculties_kb()
     )
-
 
 @dp.callback_query(F.data.startswith("fac_"))
 async def faculty_callback(callback: CallbackQuery):
@@ -272,7 +275,6 @@ async def faculty_callback(callback: CallbackQuery):
     except TelegramBadRequest:
         pass
     await callback.answer()
-
 
 @dp.callback_query(F.data.startswith("spec_"))
 async def specialty_callback(callback: CallbackQuery):
@@ -288,7 +290,6 @@ async def specialty_callback(callback: CallbackQuery):
         pass
     await callback.answer()
 
-
 @dp.callback_query(F.data.startswith("course_"))
 async def course_callback(callback: CallbackQuery):
     _, faculty, code, course = callback.data.split("_", 3)
@@ -301,7 +302,6 @@ async def course_callback(callback: CallbackQuery):
     except TelegramBadRequest:
         pass
     await callback.answer()
-
 
 @dp.callback_query(F.data.startswith("grp_"))
 async def group_callback(callback: CallbackQuery):
@@ -336,32 +336,39 @@ async def group_callback(callback: CallbackQuery):
             print(f"Помилка редагування: {e}")
     await callback.answer()
 
-
 @dp.callback_query(F.data == "menu_map")
 async def menu_map_callback(callback: CallbackQuery):
     back_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🔙 Назад до меню", callback_data="grp_ФАІТ_F7_3_КСМ-24")]
+        [InlineKeyboardButton(text="🔙 Назад до меню", callback_data="grp_ФАІТ_F7_3_КСМ-25")]
     ])
     
-    photo_file = FSInputFile("photo_2026-09-30_21-24-41_2.jpg")
+    filename = "photo_2026-09-30_21-24-41.jpg"
     
-    try:
-        await callback.message.delete()
-        await callback.message.answer_photo(
-            photo=photo_file,
-            caption=CAMPUS_MAP_CAPTION,
-            reply_markup=back_kb,
-            parse_mode="HTML"
-        )
-    except Exception as e:
-        print(f"Помилка надсилання фото карти: {e}")
+    if os.path.exists(filename):
+        photo_file = FSInputFile(filename)
+        try:
+            await callback.message.delete()
+            await callback.message.answer_photo(
+                photo=photo_file,
+                caption=CAMPUS_MAP_CAPTION,
+                reply_markup=back_kb,
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            print(f"Помилка надсилання фото карти: {e}")
+            await callback.message.answer(
+                CAMPUS_MAP_CAPTION,
+                reply_markup=back_kb,
+                parse_mode="HTML"
+            )
+    else:
+        print(f"УВАГА: Файл {filename} не знайдено в папці скрипта!")
         await callback.message.answer(
-            CAMPUS_MAP_CAPTION,
+            "⚠️ Файл зображення карти не знайдено на сервері.\n\n" + CAMPUS_MAP_CAPTION,
             reply_markup=back_kb,
             parse_mode="HTML"
         )
     await callback.answer()
-
 
 @dp.callback_query(F.data.startswith("menu_"))
 async def menu_actions_callback(callback: CallbackQuery):
@@ -376,7 +383,6 @@ async def menu_actions_callback(callback: CallbackQuery):
         "feedback": "💬 Для зв'язку з адміністратором пишіть у підтримку."
     }
     await callback.answer(texts.get(action, "Розділ у розробці"), show_alert=True)
-
 
 @dp.callback_query(F.data == "back_fac")
 async def back_to_faculties(callback: CallbackQuery):
@@ -395,7 +401,6 @@ async def back_to_faculties(callback: CallbackQuery):
         except TelegramBadRequest:
             pass
     await callback.answer()
-
 
 @dp.callback_query(F.data.startswith("back_spec_"))
 async def back_to_specialties(callback: CallbackQuery):
@@ -418,15 +423,13 @@ async def back_to_specialties(callback: CallbackQuery):
             pass
     await callback.answer()
 
-
 # ============================================================
 # ЗАПУСК
 # ============================================================
 async def main():
     bot = Bot(token=TOKEN)
-    print("Бот успішно запущено!")
+    print("Бот успішно запущено з новим токеном!")
     await dp.start_polling(bot)
-
 
 if __name__ == "__main__":
     asyncio.run(main())
