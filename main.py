@@ -1,5 +1,4 @@
 import asyncio
-import glob
 import os
 from aiogram import Bot, Dispatcher, F
 from aiogram.exceptions import TelegramBadRequest
@@ -67,7 +66,6 @@ FACULTIES = {
     },
 }
 
-# Актуальні списки груп за спеціальностями (згідно з даними сайту КНУБА)
 GROUPS = {
     "G7": [
         "АТП – 22",
@@ -364,7 +362,7 @@ def get_courses_kb(faculty, spec_code):
         ],
         [
             InlineKeyboardButton(
-                text="⬅️️ Назад до спеціальностей",
+                text="⬅ Назад до спеціальностей",
                 callback_data=f"back_spec_{faculty}",
             )
         ],
@@ -377,9 +375,7 @@ def get_groups_kb(spec_code, faculty, course):
     filtered_groups = []
     for grp in all_groups:
         if course in ["5", "6"]:
-            if any(
-                m in grp.lower() for m in ["м", "мд"]
-            ):  # магістерські групи
+            if any(m in grp.lower() for m in ["м", "мд"]):
                 filtered_groups.append(grp)
         else:
             if not any(m in grp.lower() for m in ["м", "мд"]):
@@ -553,13 +549,15 @@ async def menu_map_callback(callback: CallbackQuery):
         ]
     )
 
-    image_files = (
-        glob.glob("*.jpg") + glob.glob("*.png") + glob.glob("*.jpeg")
-    )
-    found_filename = image_files[0] if image_files else None
+    # ТОЧНА НАЗВА ВАШОГО ФАЙЛУ ЗІ СКРІНШОТА
+    exact_filename = "photo_2026_09_30_21_24_41.jpg"
 
-    if found_filename and os.path.exists(found_filename):
-        photo_file = FSInputFile(found_filename)
+    # Перевіряємо шлях у папці зі скриптом
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(script_dir, exact_filename)
+
+    if os.path.exists(file_path):
+        photo_file = FSInputFile(file_path)
         try:
             await callback.message.delete()
             await callback.message.answer_photo(
@@ -575,7 +573,8 @@ async def menu_map_callback(callback: CallbackQuery):
             )
     else:
         await callback.message.answer(
-            "⚠ Файл зображення карти не знайдено в папці з ботом.\n\n"
+            f"⚠ Файл <b>{exact_filename}</b> не знайдено в папці з ботом.\n"
+            f"Переконайтеся, що файл лежить у тій самій папці, де й цей скрипт (шлях: {script_dir}).\n\n"
             + CAMPUS_MAP_CAPTION,
             reply_markup=back_kb,
             parse_mode="HTML",
