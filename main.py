@@ -1,5 +1,7 @@
 import asyncio
+import json
 import os
+import sqlite3
 from aiogram import Bot, Dispatcher, F
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import CommandStart
@@ -9,10 +11,60 @@ from aiogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
+    WebAppInfo,
 )
 
 TOKEN = "8104227176:AAF2J_B7CrAGnzvtFvFcJ6wAQTjbJJDBDcE"
+# Вкажіть посилання на вашу розгорнуту гру (або тестовий URL)
+GAME_URL = "https://your-game-domain.com"
+
 dp = Dispatcher()
+
+
+# ============================================================
+# БАЗА ДАНИХ (ТАБЛИЦЯ ЛІДЕРІВ)
+# ============================================================
+def init_db():
+    conn = sqlite3.connect("leaderboard.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS players (
+            user_id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            score INTEGER DEFAULT 0
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def update_score(user_id: int, name: str, new_score: int) -> bool:
+    conn = sqlite3.connect("leaderboard.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT score FROM players WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+
+    updated = False
+    if row is None:
+        cursor.execute("INSERT INTO players (user_id, name, score) VALUES (?, ?, ?)", (user_id, name, new_score))
+        updated = True
+    elif new_score > row[0]:
+        cursor.execute("UPDATE players SET score = ?, name = ? WHERE user_id = ?", (new_score, name, user_id))
+        updated = True
+
+    conn.commit()
+    conn.close()
+    return updated
+
+
+def get_top_players(limit: int = 20):
+    conn = sqlite3.connect("leaderboard.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, score FROM players ORDER BY score DESC LIMIT ?", (limit,))
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
 
 # ============================================================
 # СТРУКТУРА ФАКУЛЬТЕТІВ ТА СПЕЦІАЛЬНОСТЕЙ КНУБА
@@ -68,137 +120,48 @@ FACULTIES = {
 
 GROUPS = {
     "G7": [
-        "АТП – 22",
-        "АКІТ – 23",
-        "АКІТс – 23",
-        "АКІТ – 24",
-        "АКІТм – 24",
-        "АКІТс – 24",
-        "АКІТ – 25",
-        "АКІТм – 25",
-        "АКІТс – 25",
+        "АТП – 22", "АКІТ – 23", "АКІТс – 23", "АКІТ – 24", "АКІТм – 24",
+        "АКІТс – 24", "АКІТ – 25", "АКІТм – 25", "АКІТс – 25",
     ],
     "F3": [
-        "КН – 22-1",
-        "КН – 22-2",
-        "КН – 23-1",
-        "КН – 23-2",
-        "КНс – 23",
-        "КН – 24-1",
-        "КН – 24-2",
-        "КНм – 24",
-        "КНс – 25",
-        "КН – УПм – 24",
-        "МН – УПм – 24",
-        "КН – 25",
-        "КНм – 25",
-        "КНмд – 25",
-        "КНд – 25",
-        "КН – УПм – 25",
-        "КН – УПмд – 25",
-        "МН – УПм – 25",
-        "МН – УПмд – 25",
+        "КН – 22-1", "КН – 22-2", "КН – 23-1", "КН – 23-2", "КНс – 23",
+        "КН – 24-1", "КН – 24-2", "КНм – 24", "КНс – 25", "КН – УПм – 24",
+        "МН – УПм – 24", "КН – 25", "КНм – 25", "КНмд – 25", "КНд – 25",
+        "КН – УПм – 25", "КН – УПмд – 25", "МН – УПм – 25", "МН – УПмд – 25",
     ],
     "G11": [
-        "БМО – 22",
-        "БМО – 23",
-        "БМОс – 23",
-        "БМО – 24",
-        "БМОм – 24",
-        "БМОс – 24",
-        "ГМ – 25",
-        "ГМс – 25",
-        "ГМм – 25",
+        "БМО – 22", "БМО – 23", "БМОс – 23", "БМО – 24", "БМОм – 24",
+        "БМОс – 24", "ГМ – 25", "ГМс – 25", "ГМм – 25",
     ],
     "F7": [
-        "КСМ – 22",
-        "КСМ – 23",
-        "КСМс – 23",
-        "КСМ – 24",
-        "КСМс – 24",
-        "КСМм – 24",
-        "КСМ – 25",
-        "КСМд – 25",
-        "КСМм – 25",
-        "КСМс – 25",
+        "КСМ – 22", "КСМ – 23", "КСМс – 23", "КСМ – 24", "КСМс – 24",
+        "КСМм – 24", "КСМ – 25", "КСМд – 25", "КСМм – 25", "КСМс – 25",
     ],
     "G9": [
-        "ПС – 22",
-        "ПС – 23",
-        "ПС – 24",
-        "ПС – 25",
-        "ПСсм – 24",
-        "ПСсм – 25",
+        "ПС – 22", "ПС – 23", "ПС – 24", "ПС – 25", "ПСсм – 24", "ПСсм – 25",
     ],
     "F5": [
-        "БІКС – 22",
-        "БІКС – 23-1",
-        "БІКС – 23-2",
-        "БІКСс – 23",
-        "БІКС – 24-1",
-        "БІКС – 24-2",
-        "БІКСс – 24",
-        "БІКСс – 25",
-        "БІКСм – 24",
-        "БІКСмд – 25",
-        "БІКСм – 25",
-        "БІКСд – 25",
-        "БІКС – 25",
+        "БІКС – 22", "БІКС – 23-1", "БІКС – 23-2", "БІКСс – 23", "БІКС – 24-1",
+        "БІКС – 24-2", "БІКСс – 24", "БІКСс – 25", "БІКСм – 24", "БІКСмд – 25",
+        "БІКСм – 25", "БІКСд – 25", "БІКС – 25",
     ],
     "G4": ["ВДЕ – 23", "ВДЕ – 24", "ВДЕ – 25", "ВДЕс – 25"],
     "F6": [
-        "ІСТ – 22",
-        "ІСТ – 23",
-        "ІСТ – 24",
-        "ІСТ – 25",
-        "ІСТм – 24",
-        "ІСТ-УП – 22",
-        "ІСТ-УП – 23",
-        "ІПЗм – 24",
-        "ШІКТм – 24",
-        "ІСТм – 25",
-        "ІСТ-ШІд – 25",
-        "ІСТд – 25",
-        "ШІКТм – 25",
-        "ШІКТмд – 25",
-        "ІПЗм – 25",
-        "ІПЗд – 25",
+        "ІСТ – 22", "ІСТ – 23", "ІСТ – 24", "ІСТ – 25", "ІСТм – 24",
+        "ІСТ-УП – 22", "ІСТ-УП – 23", "ІПЗм – 24", "ШІКТм – 24", "ІСТм – 25",
+        "ІСТ-ШІд – 25", "ІСТд – 25", "ШІКТм – 25", "ШІКТмд – 25", "ІПЗм – 25", "ІПЗд – 25",
     ],
     "G3": [
-        "ECA – 22",
-        "ECA – 23",
-        "ECAC – 23",
-        "ECA – 24",
-        "ECAC – 24",
-        "ECA – 25",
-        "ECAC – 25",
-        "EСАм – 24",
-        "EСАм – 25",
+        "ECA – 22", "ECA – 23", "ECAC – 23", "ECA – 24", "ECAC – 24",
+        "ECA – 25", "ECAC – 25", "EСАм – 24", "EСАм – 25",
     ],
     "A5": [
-        "ПНБЗ – 22",
-        "ПНБЗ – 23",
-        "ПНБЗ – 25",
-        "ПНК – 22",
-        "ПНК – 23",
-        "ПНК – 24",
-        "ПНК – 25",
-        "ПНКм – 24",
-        "ПНМ – 22",
-        "ПНМ – 23",
-        "ПНМ – 24",
-        "ПНМ – 25",
-        "ПНМс – 25",
-        "ПНКм – 25",
-        "ПНКс – 25",
+        "ПНБЗ – 22", "ПНБЗ – 23", "ПНБЗ – 25", "ПНК – 22", "ПНК – 23",
+        "ПНК – 24", "ПНК – 25", "ПНКм – 24", "ПНМ – 22", "ПНМ – 23",
+        "ПНМ – 24", "ПНМ – 25", "ПНМс – 25", "ПНКм – 25", "ПНКс – 25",
     ],
     "F2": [
-        "ІПЗ – 22",
-        "ІПЗ – 23",
-        "ІПЗ – 24",
-        "ІПЗ – 25",
-        "ІПЗм – 24",
-        "ІПЗм – 25",
+        "ІПЗ – 22", "ІПЗ – 23", "ІПЗ – 24", "ІПЗ – 25", "ІПЗм – 24", "ІПЗм – 25",
     ],
 }
 
@@ -315,56 +278,31 @@ def get_faculties_kb():
 def get_specialties_kb(faculty):
     keyboard = []
     for code, name in FACULTIES[faculty].items():
-        keyboard.append(
-            [
-                InlineKeyboardButton(
-                    text=f"{code} — {name}", callback_data=f"spec_{faculty}_{code}"
-                )
-            ]
-        )
-    keyboard.append(
-        [
-            InlineKeyboardButton(
-                text="⬅️ Назад до факультетів", callback_data="back_fac"
-            )
-        ]
-    )
+        keyboard.append([
+            InlineKeyboardButton(text=f"{code} — {name}", callback_data=f"spec_{faculty}_{code}")
+        ])
+    keyboard.append([
+        InlineKeyboardButton(text="⬅️ Назад до факультетів", callback_data="back_fac")
+    ])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
 def get_courses_kb(faculty, spec_code):
     keyboard = [
         [
-            InlineKeyboardButton(
-                text="1 курс", callback_data=f"course_{faculty}_{spec_code}_1"
-            ),
-            InlineKeyboardButton(
-                text="2 курс", callback_data=f"course_{faculty}_{spec_code}_2"
-            ),
+            InlineKeyboardButton(text="1 курс", callback_data=f"course_{faculty}_{spec_code}_1"),
+            InlineKeyboardButton(text="2 курс", callback_data=f"course_{faculty}_{spec_code}_2"),
         ],
         [
-            InlineKeyboardButton(
-                text="3 курс", callback_data=f"course_{faculty}_{spec_code}_3"
-            ),
-            InlineKeyboardButton(
-                text="4 курс", callback_data=f"course_{faculty}_{spec_code}_4"
-            ),
+            InlineKeyboardButton(text="3 курс", callback_data=f"course_{faculty}_{spec_code}_3"),
+            InlineKeyboardButton(text="4 курс", callback_data=f"course_{faculty}_{spec_code}_4"),
         ],
         [
-            InlineKeyboardButton(
-                text="5 курс (Магістратура)",
-                callback_data=f"course_{faculty}_{spec_code}_5",
-            ),
-            InlineKeyboardButton(
-                text="6 курс (Магістратура)",
-                callback_data=f"course_{faculty}_{spec_code}_6",
-            ),
+            InlineKeyboardButton(text="5 курс (Магістратура)", callback_data=f"course_{faculty}_{spec_code}_5"),
+            InlineKeyboardButton(text="6 курс (Магістратура)", callback_data=f"course_{faculty}_{spec_code}_6"),
         ],
         [
-            InlineKeyboardButton(
-                text="⬅ Назад до спеціальностей",
-                callback_data=f"back_spec_{faculty}",
-            )
+            InlineKeyboardButton(text="⬅ Назад до спеціальностей", callback_data=f"back_spec_{faculty}")
         ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -387,62 +325,48 @@ def get_groups_kb(spec_code, faculty, course):
     keyboard = []
     row = []
     for grp in filtered_groups:
-        row.append(
-            InlineKeyboardButton(
-                text=grp, callback_data=f"grp_{faculty}_{spec_code}_{course}_{grp}"
-            )
-        )
+        row.append(InlineKeyboardButton(text=grp, callback_data=f"grp_{faculty}_{spec_code}_{course}_{grp}"))
         if len(row) == 2:
             keyboard.append(row)
             row = []
     if row:
         keyboard.append(row)
 
-    keyboard.append(
-        [
-            InlineKeyboardButton(
-                text="⬅ Назад до курсів", callback_data=f"spec_{faculty}_{spec_code}"
-            )
-        ]
-    )
+    keyboard.append([
+        InlineKeyboardButton(text="⬅ Назад до курсів", callback_data=f"spec_{faculty}_{spec_code}")
+    ])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
 def get_menu_kb(faculty, spec_code, course):
     keyboard = [
         [
-            InlineKeyboardButton(
-                text="🔄 Глянути інший розклад",
-                callback_data=f"course_{faculty}_{spec_code}_{course}",
-            )
+            InlineKeyboardButton(text="🔄 Глянути інший розклад", callback_data=f"course_{faculty}_{spec_code}_{course}")
         ],
         [
-            InlineKeyboardButton(
-                text="🟢 Вільні аудиторії", callback_data="menu_free_rooms"
-            ),
+            InlineKeyboardButton(text="🟢 Вільні аудиторії", callback_data="menu_free_rooms"),
             InlineKeyboardButton(text="🗺 Карта корпусів", callback_data="menu_map"),
         ],
         [
-            InlineKeyboardButton(
-                text="📚 Навчальна програма", callback_data="menu_program"
-            ),
+            InlineKeyboardButton(text="📚 Навчальна програма", callback_data="menu_program"),
             InlineKeyboardButton(text="⚙ Налаштування", callback_data="menu_settings"),
         ],
         [
-            InlineKeyboardButton(
-                text="📊 Розрахунковий комплекс", callback_data="menu_complex"
-            )
+            InlineKeyboardButton(text="📊 Розрахунковий комплекс", callback_data="menu_complex")
         ],
         [
-            InlineKeyboardButton(
-                text="💬 Зворотний зв'язок", callback_data="menu_feedback"
-            )
+            # 🎮 Додано кнопку гри через WebApp
+            InlineKeyboardButton(text="🎮 Грати: Пес Патрон проти Шахедів", web_app=WebAppInfo(url=GAME_URL))
         ],
         [
-            InlineKeyboardButton(
-                text="🔙 Назад до груп",
-                callback_data=f"course_{faculty}_{spec_code}_{course}",
-            )
+            # 🏆 Додано кнопку таблиці лідерів
+            InlineKeyboardButton(text="🏆 Top Players (Таблиця лідерів)", callback_data="menu_top")
+        ],
+        [
+            InlineKeyboardButton(text="💬 Зворотний зв'язок", callback_data="menu_feedback")
+        ],
+        [
+            InlineKeyboardButton(text="🔙 Назад до груп", callback_data=f"course_{faculty}_{spec_code}_{course}")
         ],
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -455,7 +379,7 @@ def get_menu_kb(faculty, spec_code, course):
 async def start_cmd(message: Message):
     await message.answer(
         "Вітаю в боті розкладу КНУБА!\n\nКрок 1. Оберіть факультет:",
-        reply_markup=get_faculties_kb(),
+        reply_markup=get_faculties_kb()
     )
 
 
@@ -468,13 +392,13 @@ async def faculty_callback(callback: CallbackQuery):
             await callback.message.answer(
                 f"🏛 Факультет: <b>{faculty}</b>\n\nКрок 2. Оберіть спеціальність:",
                 reply_markup=get_specialties_kb(faculty),
-                parse_mode="HTML",
+                parse_mode="HTML"
             )
         else:
             await callback.message.edit_text(
                 f"🏛 Факультет: <b>{faculty}</b>\n\nКрок 2. Оберіть спеціальність:",
                 reply_markup=get_specialties_kb(faculty),
-                parse_mode="HTML",
+                parse_mode="HTML"
             )
     except TelegramBadRequest:
         pass
@@ -491,13 +415,13 @@ async def specialty_callback(callback: CallbackQuery):
             await callback.message.answer(
                 f"🏛 Факультет: {faculty}\n🎓 Спеціальність: <b>{code} — {spec_name}</b>\n\nКрок 3. Оберіть курс навчання:",
                 reply_markup=get_courses_kb(faculty, code),
-                parse_mode="HTML",
+                parse_mode="HTML"
             )
         else:
             await callback.message.edit_text(
                 f"🏛 Факультет: {faculty}\n🎓 Спеціальність: <b>{code} — {spec_name}</b>\n\nКрок 3. Оберіть курс навчання:",
                 reply_markup=get_courses_kb(faculty, code),
-                parse_mode="HTML",
+                parse_mode="HTML"
             )
     except TelegramBadRequest:
         pass
@@ -513,13 +437,13 @@ async def course_callback(callback: CallbackQuery):
             await callback.message.answer(
                 f"🏛 Факультет: {faculty}\n🎓 Спеціальність: {code}\n📚 Курс: <b>{course} курс</b>\n\nКрок 4. Оберіть групу:",
                 reply_markup=get_groups_kb(code, faculty, course),
-                parse_mode="HTML",
+                parse_mode="HTML"
             )
         else:
             await callback.message.edit_text(
                 f"🏛 Факультет: {faculty}\n🎓 Спеціальність: {code}\n📚 Курс: <b>{course} курс</b>\n\nКрок 4. Оберіть групу:",
                 reply_markup=get_groups_kb(code, faculty, course),
-                parse_mode="HTML",
+                parse_mode="HTML"
             )
     except TelegramBadRequest:
         pass
@@ -547,14 +471,14 @@ async def group_callback(callback: CallbackQuery):
         await callback.message.answer(
             text,
             reply_markup=get_menu_kb(faculty, spec_code, course),
-            parse_mode="HTML",
+            parse_mode="HTML"
         )
     else:
         try:
             await callback.message.edit_text(
                 text,
                 reply_markup=get_menu_kb(faculty, spec_code, course),
-                parse_mode="HTML",
+                parse_mode="HTML"
             )
         except TelegramBadRequest as e:
             print(f"Помилка редагування: {e}")
@@ -565,11 +489,7 @@ async def group_callback(callback: CallbackQuery):
 async def menu_map_callback(callback: CallbackQuery):
     back_kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="🔙 Назад до меню", callback_data="grp_ФАІТ_F7_3_КСМ – 25"
-                )
-            ]
+            [InlineKeyboardButton(text="🔙 Назад до меню", callback_data="grp_ФАІТ_F7_3_КСМ – 25")]
         ]
     )
 
@@ -585,28 +505,49 @@ async def menu_map_callback(callback: CallbackQuery):
                 photo=photo_file,
                 caption=CAMPUS_MAP_CAPTION,
                 reply_markup=back_kb,
-                parse_mode="HTML",
+                parse_mode="HTML"
             )
         except Exception as e:
             print(f"Помилка надсилання фото карти: {e}")
-            await callback.message.answer(
-                CAMPUS_MAP_CAPTION, reply_markup=back_kb, parse_mode="HTML"
-            )
+            await callback.message.answer(CAMPUS_MAP_CAPTION, reply_markup=back_kb, parse_mode="HTML")
     else:
         await callback.message.answer(
             f"⚠ Файл <b>{exact_filename}</b> не знайдено в папці з ботом.\n"
             f"Переконайтеся, що файл лежить у тій самій папці, де й цей скрипт (шлях: {script_dir}).\n\n"
             + CAMPUS_MAP_CAPTION,
             reply_markup=back_kb,
-            parse_mode="HTML",
+            parse_mode="HTML"
         )
+    await callback.answer()
+
+
+# Відображення таблиці лідерів (Top Players)
+@dp.callback_query(F.data == "menu_top")
+async def menu_top_callback(callback: CallbackQuery):
+    top_data = get_top_players(20)
+
+    if not top_data:
+        msg = "🏆 **Top Players**\n\nПоки що немає жодного результату. Стань першим у КНУБА!"
+    else:
+        msg = "🏆 **Top Players**\n"
+        medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+        for idx, (name, score) in enumerate(top_data, start=1):
+            prefix = medals.get(idx, f"{idx}.")
+            msg += f"{prefix} {name} – {score}\n"
+
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔄 Оновити", callback_data="menu_top")],
+        [InlineKeyboardButton(text="🔙 Назад до меню", callback_data="grp_ФАІТ_F7_3_КСМ – 25")]
+    ])
+
+    await callback.message.edit_text(msg, reply_markup=kb, parse_mode="Markdown")
     await callback.answer()
 
 
 @dp.callback_query(F.data.startswith("menu_"))
 async def menu_actions_callback(callback: CallbackQuery):
     action = callback.data.split("_")[1]
-    if action == "map":
+    if action in ["map", "top"]:
         return
     texts = {
         "free_rooms": "🟢 Функція пошуку вільних аудиторій у розробці.",
@@ -618,19 +559,34 @@ async def menu_actions_callback(callback: CallbackQuery):
     await callback.answer(texts.get(action, "Розділ у розробці"), show_alert=True)
 
 
+# Автоматичний прийом балів із WebApp гри
+@dp.message(F.web_app_data)
+async def web_app_data_handler(message: Message):
+    try:
+        data = json.loads(message.web_app_data.data)
+        score = int(data.get("score", 0))
+        user_name = message.from_user.full_name
+
+        update_score(message.from_user.id, user_name, score)
+        await message.answer(f"🎯 Гру завершено! Ваш результат: **{score}** балів збережено в загальний топ КНУБА.",
+                             parse_mode="Markdown")
+    except Exception:
+        await message.answer("Помилка збереження результату з гри.")
+
+
 @dp.callback_query(F.data == "back_fac")
 async def back_to_faculties(callback: CallbackQuery):
     if callback.message.photo:
         await callback.message.delete()
         await callback.message.answer(
             "Вітаю в боті розкладу КНУБА!\n\nКрок 1. Оберіть факультет:",
-            reply_markup=get_faculties_kb(),
+            reply_markup=get_faculties_kb()
         )
     else:
         try:
             await callback.message.edit_text(
                 "Вітаю в боті розкладу КНУБА!\n\nКрок 1. Оберіть факультет:",
-                reply_markup=get_faculties_kb(),
+                reply_markup=get_faculties_kb()
             )
         except TelegramBadRequest:
             pass
@@ -645,14 +601,14 @@ async def back_to_specialties(callback: CallbackQuery):
         await callback.message.answer(
             f"🏛 Факультет: <b>{faculty}</b>\n\nКрок 2. Оберіть спеціальність:",
             reply_markup=get_specialties_kb(faculty),
-            parse_mode="HTML",
+            parse_mode="HTML"
         )
     else:
         try:
             await callback.message.edit_text(
                 f"🏛 Факультет: <b>{faculty}</b>\n\nКрок 2. Оберіть спеціальність:",
                 reply_markup=get_specialties_kb(faculty),
-                parse_mode="HTML",
+                parse_mode="HTML"
             )
         except TelegramBadRequest:
             pass
@@ -663,6 +619,7 @@ async def back_to_specialties(callback: CallbackQuery):
 # ЗАПУСК
 # ============================================================
 async def main():
+    init_db()
     bot = Bot(token=TOKEN)
     print("Бот успішно запущено!")
     await dp.start_polling(bot)
