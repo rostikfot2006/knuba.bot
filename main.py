@@ -15,8 +15,9 @@ from aiogram.types import (
 )
 
 TOKEN = "8104227176:AAF2J_B7CrAGnzvtFvFcJ6wAQTjbJJDBDcE"
-# Вкажіть посилання на вашу розгорнуту гру (або тестовий URL)
-GAME_URL = "https://your-game-domain.com"
+
+# 🟢 Оновлена адреса вашої веб-гри на GitHub Pages
+GAME_URL = "https://rostikfot2006.github.io/knuba.bot/"
 
 dp = Dispatcher()
 
@@ -355,11 +356,11 @@ def get_menu_kb(faculty, spec_code, course):
             InlineKeyboardButton(text="📊 Розрахунковий комплекс", callback_data="menu_complex")
         ],
         [
-            # 🎮 Додано кнопку гри через WebApp
+            # 🎮 Кнопка гри через WebApp
             InlineKeyboardButton(text="🎮 Грати: Пес Патрон проти Шахедів", web_app=WebAppInfo(url=GAME_URL))
         ],
         [
-            # 🏆 Додано кнопку таблиці лідерів
+            # 🏆 Кнопка таблиці лідерів
             InlineKeyboardButton(text="🏆 Top Players (Таблиця лідерів)", callback_data="menu_top")
         ],
         [
@@ -381,6 +382,12 @@ async def start_cmd(message: Message):
         "Вітаю в боті розкладу КНУБА!\n\nКрок 1. Оберіть факультет:",
         reply_markup=get_faculties_kb()
     )
+
+
+# Обробник виклику гри через BotFather (Telegram Game API)
+@dp.callback_query(F.game_short_name == "patron_game")
+async def play_game_callback(callback: CallbackQuery):
+    await callback.answer(url=GAME_URL)
 
 
 @dp.callback_query(F.data.startswith("fac_"))
