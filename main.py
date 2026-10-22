@@ -16,7 +16,7 @@ from aiogram.types import (
 
 TOKEN = "8104227176:AAF2J_B7CrAGnzvtFvFcJ6wAQTjbJJDBDcE"
 
-# 🟢 Оновлена адреса вашої веб-гри на GitHub Pages
+# 🟢 Адреса вашої веб-гри на GitHub Pages
 GAME_URL = "https://rostikfot2006.github.io/knuba.bot/"
 
 dp = Dispatcher()
@@ -120,6 +120,7 @@ FACULTIES = {
 }
 
 GROUPS = {
+    # ФАІТ
     "G7": [
         "АТП – 22", "АКІТ – 23", "АКІТс – 23", "АКІТ – 24", "АКІТм – 24",
         "АКІТс – 24", "АКІТ – 25", "АКІТм – 25", "АКІТс – 25",
@@ -164,30 +165,35 @@ GROUPS = {
     "F2": [
         "ІПЗ – 22", "ІПЗ – 23", "ІПЗ – 24", "ІПЗ – 25", "ІПЗм – 24", "ІПЗм – 25",
     ],
+    # ФУПП
+    "G19": ["БМП", "МБГ", "МБГс", "ПЛс", "ПМ", "Заочне"],
+    "D8": ["Право-1", "Право-2"],
+    "D4": ["Політологія-1"],
 }
 
-KSM_24_SCHEDULE = """📅 Розклад для групи КСМ – 24 (Жовтень 2026):
+# 🟢 Оновлений актуальний розклад для групи КСМ – 24
+KSM_24_SCHEDULE = """📅 Розклад для групи КСМ – 24 (Жовтень – Листопад 2026):
 
 🟢 Понеділок:
-- 2 пара (10:30) — ТестПрогСис [Лк] (Дистанційно, Шабала Є.Є.)
+- 2 пара (10:30–11:50) — ТестПрогСис [Лк] (Дистанційно, Шабала Є.Є.)[cite: 6]
 
-🔵 Вівторок:
-- 1 пара (09:00) — ФОКК [Пз] (ауд. 476, Азнаурян І.О.)
-- 2 пара (10:30) — ТестПрогСис [Лб] (ауд. 472, Шабала Є.Є.)
+🔵 Вівторок (з 27.10):
+- 1 пара (09:00–10:20) — ФОКК [Пз] (ауд. 476, Азнаурян І.О.)[cite: 6]
+- 2 пара (10:30–11:50) — ТестПрогСис [Лб] (ауд. 472, Шабала Є.Є.)[cite: 6]
 
 🟠 Середа:
-- 1 пара (09:00) — СисАналіз [Пз] (ауд. 349, Ізмайлова О.В.)
-- 2 пара (10:30) — УП-S-UP [Пз] (ауд. 148, Концевий В.В.)
+- 1 пара (09:00–10:20) — СисАналіз [Пз] (ауд. 349, Ізмайлова О.В.)[cite: 6]
+- 2 пара (10:30–11:50) — УП-S-UP [Пз] (ауд. 148, Концевий В.В.)[cite: 6]
+- 3 пара (12:20–13:40) — ТестПрогСис [Лб] (ауд. каф., Шабала Є.Є.)[cite: 6]
+- 4 пара (13:50–15:10) — ДослідОперацій [Пз] (ауд. 347, Терентьєв О.О.)[cite: 6]
 
 🟣 Четвер:
-- 4 пара (13:50) — АвтСисДіагіКон [Пз] (ауд. 30А, Городжа А.Д.)
-- 5 пара (15:20) — ТестПрогСис [Лб] (ауд. 472, Шабала Є.Є.)
+- 4 пара (13:50–15:10) — АвтСисДіагіКон [Пз] (ауд. 30А, Городжа А.Д.)[cite: 6]
+- 5 пара (15:20–16:40) — Політ [Пз] (ауд. 436, Семко В.Л.)[cite: 6]
 
 🟡 П'ятниця:
-- 2 пара (10:30) — ДослідОперацій [Лк/Лб] (Дистанційно, Терентьєв О.О.)
-- 3 пара (12:20) — СисАналіз [Лк] (Дистанційно, Ізмайлова О.В.)
-- 4 пара (13:50) — Політ [Лк] (Дистанційно, Семко В.Л.)
-- 5 пара (15:20) — ФОКК [Лк] (Дистанційно, Азнаурян І.О.)
+- 2 пара (10:30–11:50) — УП-S-UP [Лк] (Дистанційно, Концевий В.В.)[cite: 6]
+- 3 пара (12:20–13:40) — СисАналіз [Лк] (Дистанційно, Ізмайлова О.В.)[cite: 6]
 """
 
 KSM_25_SCHEDULE = """📅 Розклад для групи КСМ – 25 (Жовтень 2026):
@@ -356,11 +362,9 @@ def get_menu_kb(faculty, spec_code, course):
             InlineKeyboardButton(text="📊 Розрахунковий комплекс", callback_data="menu_complex")
         ],
         [
-            # 🎮 Кнопка гри через WebApp
             InlineKeyboardButton(text="🎮 Грати: Пес Патрон проти Шахедів", web_app=WebAppInfo(url=GAME_URL))
         ],
         [
-            # 🏆 Кнопка таблиці лідерів
             InlineKeyboardButton(text="🏆 Top Players (Таблиця лідерів)", callback_data="menu_top")
         ],
         [
@@ -384,7 +388,6 @@ async def start_cmd(message: Message):
     )
 
 
-# Обробник виклику гри через BotFather (Telegram Game API)
 @dp.callback_query(F.game_short_name == "patron_game")
 async def play_game_callback(callback: CallbackQuery):
     await callback.answer(url=GAME_URL)
@@ -414,8 +417,10 @@ async def faculty_callback(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("spec_"))
 async def specialty_callback(callback: CallbackQuery):
-    _, faculty, code = callback.data.split("_", 2)
-    spec_name = FACULTIES[faculty][code]
+    parts = callback.data.split("_", 2)
+    faculty = parts[1]
+    code = parts[2]
+    spec_name = FACULTIES[faculty].get(code, "Спеціальність")
     try:
         if callback.message.photo:
             await callback.message.delete()
@@ -437,7 +442,10 @@ async def specialty_callback(callback: CallbackQuery):
 
 @dp.callback_query(F.data.startswith("course_"))
 async def course_callback(callback: CallbackQuery):
-    _, faculty, code, course = callback.data.split("_", 3)
+    parts = callback.data.split("_", 3)
+    faculty = parts[1]
+    code = parts[2]
+    course = parts[3]
     try:
         if callback.message.photo:
             await callback.message.delete()
@@ -460,7 +468,7 @@ async def course_callback(callback: CallbackQuery):
 @dp.callback_query(F.data.startswith("grp_"))
 async def group_callback(callback: CallbackQuery):
     data = callback.data[4:]
-    parts = data.split("_")
+    parts = data.split("_", 3)
     faculty = parts[0]
     spec_code = parts[1]
     course = parts[2]
@@ -496,7 +504,7 @@ async def group_callback(callback: CallbackQuery):
 async def menu_map_callback(callback: CallbackQuery):
     back_kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🔙 Назад до меню", callback_data="grp_ФАІТ_F7_3_КСМ – 25")]
+            [InlineKeyboardButton(text="🔙 Назад до меню", callback_data="back_fac")]
         ]
     )
 
@@ -528,7 +536,6 @@ async def menu_map_callback(callback: CallbackQuery):
     await callback.answer()
 
 
-# Відображення таблиці лідерів (Top Players)
 @dp.callback_query(F.data == "menu_top")
 async def menu_top_callback(callback: CallbackQuery):
     top_data = get_top_players(20)
@@ -544,7 +551,7 @@ async def menu_top_callback(callback: CallbackQuery):
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🔄 Оновити", callback_data="menu_top")],
-        [InlineKeyboardButton(text="🔙 Назад до меню", callback_data="grp_ФАІТ_F7_3_КСМ – 25")]
+        [InlineKeyboardButton(text="🔙 Назад до меню", callback_data="back_fac")]
     ])
 
     await callback.message.edit_text(msg, reply_markup=kb, parse_mode="Markdown")
@@ -566,7 +573,6 @@ async def menu_actions_callback(callback: CallbackQuery):
     await callback.answer(texts.get(action, "Розділ у розробці"), show_alert=True)
 
 
-# Автоматичний прийом балів із WebApp гри
 @dp.message(F.web_app_data)
 async def web_app_data_handler(message: Message):
     try:
